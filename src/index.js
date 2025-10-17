@@ -6,6 +6,6 @@ import { ErrorBoundary } from './ErrorBoundary';
 const root = createRoot(document.getElementById('root'));
 root.render(
   <ErrorBoundary>
-    <ChartComponent />
+    <ChartComponent symbol="MMM"/>
   </ErrorBoundary>
 );
