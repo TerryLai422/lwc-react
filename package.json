@@ -9,26 +9,17 @@
     "watch": "parcel watch src/index.html",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/brandiqa/react-parcel-starter.git"
-  },
   "keywords": [
     "React",
     "Parcel",
     "Starter"
   ],
-  "author": "Michael Wanyoike",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/brandiqa/react-parcel-starter/issues"
-  },
-  "homepage": "https://github.com/brandiqa/react-parcel-starter#readme",
   "browserslist": [
     "last 1 Chrome version"
   ],
   "dependencies": {
     "lightweight-charts": "^5.0.9",
+    "moving-average": "^1.0.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
@@ -36,6 +27,7 @@
     "@babel/core": "^7.10.2",
     "@babel/preset-env": "^7.10.2",
     "@babel/preset-react": "^7.10.1",
-    "parcel-bundler": "^1.12.4"
+    "parcel-bundler": "^1.12.4",
+    "typescript": "^5.9.3"
   }
 }
