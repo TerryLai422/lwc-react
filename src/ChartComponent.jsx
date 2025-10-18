@@ -2,7 +2,7 @@ import { createChart, ColorType, LineSeries, CandlestickSeries, HistogramSeries 
 import React, { useEffect, useRef, useState } from 'react';
 import { fetchChartData } from './api/chartApi';
 import { calculateMovingAverageIndicatorValues } from './utils/moving-average-calculation';
-
+import { privateDecrypt } from 'crypto';
 
 const ChartComponent = props => {
     const chartContainerRef = useRef(null);
@@ -11,7 +11,7 @@ const ChartComponent = props => {
     const [error, setError] = useState(null);
 
     const {
-        symbol = 'TSLA', // Add default symbol prop
+        symbol = 'TSLA',
         type = 'line',
         colors: {
             backgroundColor = 'white',
@@ -22,7 +22,7 @@ const ChartComponent = props => {
         } = {},
     } = props;
 
-    // Update useEffect to use symbol prop
+    // Fetch chart data
     useEffect(() => {
         const loadData = async () => {
             try {
@@ -35,12 +35,10 @@ const ChartComponent = props => {
                 setIsLoading(false);
             }
         };
-
         loadData();
-    }, [symbol, type]); // Add symbol to dependency array
+    }, [symbol, type]);
 
-
-    // Helper: create and apply multiple moving averages
+    // Moving averages for price
     const addMovingAverages = (chart, data) => {
         const movingAverages = [
             { length: 20, color: 'orange' },
@@ -49,53 +47,45 @@ const ChartComponent = props => {
         ];
 
         for (const ma of movingAverages) {
-            const maData = calculateMovingAverageIndicatorValues(data, {
-                length: ma.length
-            });
-
+            const maData = calculateMovingAverageIndicatorValues(data, { length: ma.length });
             const maSeries = chart.addSeries(LineSeries, {
                 color: ma.color,
-                lineWidth: 1,
+                lineWidth: 1
             });
-
             maSeries.setData(maData);
         }
     };
 
-    // Helper: calculate simple moving average for volume
-    const calculateVolumeMovingAverage = (data, length = 20) => {
+    // 20-day moving average for volume
+    const calculateVolumeMovingAverage = (volumeData, length = 20) => {
         const result = [];
-        for (let i = 0; i < data.length; i++) {
+        for (let i = 0; i < volumeData.length; i++) {
             if (i < length - 1) continue;
-            const slice = data.slice(i - length + 1, i + 1);
+            const slice = volumeData.slice(i - length + 1, i + 1);
             const avg = slice.reduce((sum, d) => sum + (d.value || 0), 0) / length;
-            result.push({ time: data[i].time, value: avg });
+            result.push({ time: volumeData[i].time, value: avg });
         }
         return result;
     };
 
-    // Helper: add volume histogram
-    const addVolumeHistogram = (chart, data) => {
+    // Volume histogram + 20-day MA
+    const addVolumeSeries = (chart, data) => {
+        // Separate price scale for volume
         const volumeSeries = chart.addSeries(HistogramSeries, {
             priceFormat: { type: 'volume' },
-            priceScaleId: 'volume', // separate scale from price
-            scaleMargins: {
-                top: 0.9, // bottom 10% for volume
-                bottom: 0,
-            },
+            priceScaleId: 'volume',
         });
 
         const volumeData = data
-            .filter(item => item.volume !== undefined)
-            .map(item => ({
-                time: item.time,
-                value: item.volume,
-                color:
-                    item.close && item.open
-                        ? item.close > item.open
-                            ? 'rgba(38, 166, 154, 0.8)' // green for up day
-                            : 'rgba(239, 83, 80, 0.8)'  // red for down day
-                        : 'rgba(100, 149, 237, 0.5)', // neutral (for line data)
+            .filter(d => d.volume !== undefined)
+            .map(d => ({
+                time: d.time,
+                value: d.volume,
+                color: d.open && d.close
+                    ? d.close > d.open
+                        ? 'rgba(38, 166, 154, 0.8)' // green
+                        : 'rgba(239, 83, 80, 0.8)' // red
+                    : 'rgba(100, 149, 237, 0.5)', // neutral for line chart
             }));
 
         volumeSeries.setData(volumeData);
@@ -103,87 +93,67 @@ const ChartComponent = props => {
         // Add 20-day moving average for volume
         const volMAData = calculateVolumeMovingAverage(volumeData, 20);
         const volMASeries = chart.addSeries(LineSeries, {
-            color: 'rgba(80, 91, 239, 0.8)', // orange line
+            color: 'rgba(120, 80, 239, 0.8)',
             lineWidth: 1.5,
-            priceScaleId: 'volume', // share same scale
+            priceScaleId: 'volume',
         });
         volMASeries.setData(volMAData);
     };
 
     useEffect(() => {
-        // Validate chartContainerRef first
-        if (!chartContainerRef.current) {
-            return;
-        }
+        if (!chartContainerRef.current) return;
+        if (!chartData || chartData.length === 0) return;
 
-        // Validate data with more detailed logging
-        if (!chartData || !Array.isArray(chartData)) {
-            console.error('Chart data must be an array');
-            return;
-        }
-
-        if (chartData.length === 0) {
-            console.warn('Chart data array is empty');
-            return;
-        }
-
+        // Create chart
         const chart = createChart(chartContainerRef.current, {
-            layout: {
-                background: { type: ColorType.Solid, color: backgroundColor },
-                textColor,
-            },
+            layout: { background: { type: ColorType.Solid, color: backgroundColor }, textColor },
             width: chartContainerRef.current.clientWidth,
-            height: 300,
+            height: 600,
+            rightPriceScale: { visible: true },
         });
 
-        const seriesDefinition = type == 'line' ? LineSeries: CandlestickSeries;
-        
+        const seriesDefinition = type === 'line' ? LineSeries : CandlestickSeries;
+
+        // Main price series
         const mainSeries = chart.addSeries(seriesDefinition, {
             color: lineColor,
             topColor: areaTopColor,
-            bottomColor: areaBottomColor,
+            bottomColor: areaBottomColor        
         });
+
+        // Configure separate price scales
+        // chart.applyOptions({
+        //     priceScales: {
+        //         price: { scaleMargins: { top: 0, bottom: 0.2 } },      // leave 20% at bottom
+        //         volume: { scaleMargins: { top: 0.8, bottom: 0 } },     // bottom 20%
+        //     },
+        // });
 
         try {
             mainSeries.setData(chartData);
             addMovingAverages(chart, chartData);
-            addVolumeHistogram(chart, chartData);
+            addVolumeSeries(chart, chartData);
 
             chart.timeScale().fitContent();
-        } catch (error) {
-            console.error('Error setting chart data:', error);
-            return;
+        } catch (err) {
+            console.error('Error setting chart data:', err);
         }
 
-        const handleResize = () => {
-            chart.applyOptions({ 
-                width: chartContainerRef.current.clientWidth 
-            });
-        };
-
+        const handleResize = () => chart.applyOptions({ width: chartContainerRef.current.clientWidth });
         window.addEventListener('resize', handleResize);
-
         return () => {
             window.removeEventListener('resize', handleResize);
             chart.remove();
         };
     }, [chartData, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor]);
 
-    if (isLoading) {
-        return <div>Loading chart data...</div>;
-    }
-
-    if (error) {
-        return <div>Error loading chart data: {error}</div>;
-    }
+    if (isLoading) return <div>Loading chart data...</div>;
+    if (error) return <div>Error loading chart data: {error}</div>;
 
     return (
         <div
             ref={chartContainerRef}
-            style={{ 
-                width: '100%', 
-                height: '300px'
-            }}
+            style={{ width: '95%', height: '600px', margin: '0 auto' }}
         />
     );
 };
