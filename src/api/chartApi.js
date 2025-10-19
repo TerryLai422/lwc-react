@@ -1,6 +1,6 @@
-export const fetchChartData = async (type = 'line', symbol = 'TSLA') => {
+export const fetchChartData = async (dataType = 'stock', resultType = 'full', symbol = 'TSLA') => {
     try {
-        const response = await fetch(`http://localhost:8080/stockdata/${type}/${symbol}`);
+        const response = await fetch(`http://localhost:8080/${dataType}/${resultType}/${symbol}`);
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }

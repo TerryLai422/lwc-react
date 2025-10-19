@@ -2,11 +2,13 @@ import { createChart, ColorType, LineSeries, CandlestickSeries, HistogramSeries 
 import React, { useEffect, useRef, useState } from 'react';
 import { fetchChartData } from './api/chartApi';
 import { calculateMovingAverageIndicatorValues } from './utils/moving-average-calculation';
+import { calculateCorrelationIndicatorValues } from './utils/correlation-calculation';
 import { privateDecrypt } from 'crypto';
 
 const ChartComponent = props => {
     const chartContainerRef = useRef(null);
     const [chartData, setChartData] = useState([]);
+    const [indexData, setIndexData] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -27,8 +29,10 @@ const ChartComponent = props => {
         const loadData = async () => {
             try {
                 setIsLoading(true);
-                const data = await fetchChartData(type == 'candlestick'? 'full': 'single', symbol);
-                setChartData(data);
+                // const indexData = await fetchChartData('index', 'full', 'SPX');
+                // setIndexData(indexData);                       
+                const chartData = await fetchChartData('stock', type == 'candlestick'? 'full': 'single', symbol);
+                setChartData(chartData);         
             } catch (err) {
                 setError(err.message);
             } finally {
@@ -70,8 +74,10 @@ const ChartComponent = props => {
 
     // Volume histogram + 20-day MA
     const addVolumeSeries = (chart, data) => {
+        const volumePane = chart.addPane(true);
+        volumePane.setHeight(100); // 100 pixels height for volume pane
         // Separate price scale for volume
-        const volumeSeries = chart.addSeries(HistogramSeries, {
+        const volumeSeries = volumePane.addSeries(HistogramSeries, {
             priceFormat: { type: 'volume' },
             priceScaleId: 'volume'
         });
@@ -92,12 +98,32 @@ const ChartComponent = props => {
 
         // Add 20-day moving average for volume
         const volMAData = calculateVolumeMovingAverage(volumeData, 20);
-        const volMASeries = chart.addSeries(LineSeries, {
+        const volMASeries = volumePane.addSeries(LineSeries, {
             color: 'rgba(120, 80, 239, 0.8)',
             lineWidth: 1.5,
             priceScaleId: 'volume'
         });
         volMASeries.setData(volMAData);
+    };
+    
+    const addCorrelationSeries = (chart, primaryData, secondaryData) => {
+
+        const correlationPane = chart.addPane(false);
+        correlationPane.setHeight(100); // 100 pixels height for volume pane
+        const indicatorData = calculateCorrelationIndicatorValues(
+            primaryData,
+            secondaryData,
+            {
+                allowMismatchedDates: true,
+                length: 20,
+            }
+        );
+        const correlationSeries = correlationPane.addSeries(LineSeries, {
+            color: 'rgba(120, 80, 239, 0.8)',
+            lineWidth: 1.5,
+            priceScaleId: 'volume'
+        });
+        correlationSeries.setData(indicatorData);
     };
 
     useEffect(() => {
@@ -121,13 +147,13 @@ const ChartComponent = props => {
             title: symbol
         });
 
-        const pane = chart.addPane(true);
-        pane.setHeight(100); // 100 pixels height for volume pane
+
 
         try {
             mainSeries.setData(chartData);
             addMovingAverages(chart, chartData);
-            addVolumeSeries(pane, chartData);
+            addVolumeSeries(chart, chartData);
+            // addCorrelationSeries(chart, chartData, indexData);
 
             chart.timeScale().fitContent();
         } catch (err) {
