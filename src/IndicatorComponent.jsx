@@ -4,15 +4,14 @@ import { fetchChartData } from './api/chartApi';
 import { calculateMovingAverageIndicatorValues } from './utils/moving-average-calculation';
 import { privateDecrypt } from 'crypto';
 
-const ChartComponent = props => {
+const IndicatorComponent = props => {
     const chartContainerRef = useRef(null);
     const [chartData, setChartData] = useState([]);
+    const [w52Data, setW52Data] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
     const {
-        symbol = 'TSLA',
-        type = 'line',
         colors: {
             backgroundColor = 'white',
             lineColor = 'blue',
@@ -26,11 +25,14 @@ const ChartComponent = props => {
     useEffect(() => {
         const loadData = async () => {
             try {
-                setIsLoading(true);
-                // const indexData = await fetchChartData('index', 'full', 'SPX');
-                // setIndexData(indexData);                       
-                const chartData = await fetchChartData('stock', type == 'candlestick'? 'full': 'single', symbol);
-                setChartData(chartData);         
+                setIsLoading(true);                      
+                const [chartData, w52Data] = await Promise.all([
+                    fetchChartData('index', 'full', 'SPX'),
+                    fetchChartData('indicator', 'single', '52w')
+                ]);
+                setChartData(chartData);
+                setW52Data(w52Data);
+                
             } catch (err) {
                 setError(err.message);
             } finally {
@@ -38,26 +40,31 @@ const ChartComponent = props => {
             }
         };
         loadData();
-    }, [symbol, type]);
+    }, []);
 
     // Moving averages for price
-    const addMovingAverages = (chart, data) => {
-        const movingAverages = [
-            { length: 20, color: 'orange' },
-            { length: 50, color: 'green' },
-            { length: 200, color: 'pink' }
-        ];
+    const addw52Data = (chart, w52Data) => {
+        const w52HPane = chart.addPane(true);
+        w52HPane.setHeight(100); 
+        const w52HSeries = w52HPane.addSeries(LineSeries, {
+            color: 'red',
+            priceFormat: { type: 'percent' },
+            priceScaleId: 'percent'
+        });
+        w52HSeries.setData(w52Data);        
 
-        for (const ma of movingAverages) {
-            const maData = calculateMovingAverageIndicatorValues(data, { length: ma.length });
-            const maSeries = chart.addSeries(LineSeries, {
-                color: ma.color,
-                lineWidth: 1,
-                lastValueVisible: false,
-                priceLineVisible: false
-            });
-            maSeries.setData(maData);
-        }
+        const w52LPane = chart.addPane(true);
+        w52LPane.setHeight(100)
+        const w52LSeries = w52LPane.addSeries(LineSeries, {
+            color: 'blue',
+            priceFormat: { type: 'precent' },
+            priceScaleId: 'precent'
+        });
+        const w52LData = w52Data.map(d => ({
+            time: d.time,
+            value: d.low
+        }));
+        w52LSeries.setData(w52LData);        
     };
 
     // 20-day moving average for volume
@@ -128,23 +135,21 @@ const ChartComponent = props => {
                 },
             },
         });
-
-        const seriesDefinition = type === 'line' ? LineSeries : CandlestickSeries;
         
         // Main price series
-        const mainSeries = chart.addSeries(seriesDefinition, {
+        const mainSeries = chart.addSeries(CandlestickSeries, {
             color: lineColor,
             topColor: areaTopColor,
             bottomColor: areaBottomColor,
-            title: symbol,
+            title: 'SPX',
             lastValueVisible: false,
             priceLineVisible: false
         });
 
         try {
             mainSeries.setData(chartData);
-            addMovingAverages(chart, chartData);
             addVolumeSeries(chart, chartData);
+            addw52Data(chart, w52Data);
 
             chart.timeScale().fitContent();
         } catch (err) {
@@ -170,4 +175,4 @@ const ChartComponent = props => {
     );
 };
 
-export { ChartComponent };
+export { IndicatorComponent };
