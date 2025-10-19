@@ -18,7 +18,7 @@ const ChartComponent = props => {
             lineColor = 'blue',
             textColor = 'black',
             areaTopColor = '#2962FF',
-            areaBottomColor = 'rgba(41, 98, 255, 0.28)',
+            areaBottomColor = 'rgba(41, 98, 255, 0.28)'
         } = {},
     } = props;
 
@@ -43,7 +43,7 @@ const ChartComponent = props => {
         const movingAverages = [
             { length: 20, color: 'orange' },
             { length: 50, color: 'green' },
-            { length: 200, color: 'pink' },
+            { length: 200, color: 'pink' }
         ];
 
         for (const ma of movingAverages) {
@@ -73,7 +73,7 @@ const ChartComponent = props => {
         // Separate price scale for volume
         const volumeSeries = chart.addSeries(HistogramSeries, {
             priceFormat: { type: 'volume' },
-            priceScaleId: 'volume',
+            priceScaleId: 'volume'
         });
 
         const volumeData = data
@@ -95,7 +95,7 @@ const ChartComponent = props => {
         const volMASeries = chart.addSeries(LineSeries, {
             color: 'rgba(120, 80, 239, 0.8)',
             lineWidth: 1.5,
-            priceScaleId: 'volume',
+            priceScaleId: 'volume'
         });
         volMASeries.setData(volMAData);
     };
@@ -108,23 +108,25 @@ const ChartComponent = props => {
         const chart = createChart(chartContainerRef.current, {
             layout: { background: { type: ColorType.Solid, color: backgroundColor }, textColor },
             width: chartContainerRef.current.clientWidth,
-            height: 600,
-            rightPriceScale: { visible: true },
+            height: 600
         });
-
+                
         const seriesDefinition = type === 'line' ? LineSeries : CandlestickSeries;
 
         // Main price series
         const mainSeries = chart.addSeries(seriesDefinition, {
             color: lineColor,
             topColor: areaTopColor,
-            bottomColor: areaBottomColor        
+            bottomColor: areaBottomColor   
         });
+
+        const pane = chart.addPane(true);
+        pane.setHeight(100); // 100 pixels height for volume pane
 
         try {
             mainSeries.setData(chartData);
             addMovingAverages(chart, chartData);
-            addVolumeSeries(chart, chartData);
+            addVolumeSeries(pane, chartData);
 
             chart.timeScale().fitContent();
         } catch (err) {
