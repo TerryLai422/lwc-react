@@ -27,7 +27,7 @@ const ChartComponent = props => {
         const loadData = async () => {
             try {
                 setIsLoading(true);
-                const data = await fetchChartData(type, symbol);
+                const data = await fetchChartData(type == 'candlestick'? 'full': 'single', symbol);
                 setChartData(data);
             } catch (err) {
                 setError(err.message);
@@ -112,12 +112,13 @@ const ChartComponent = props => {
         });
                 
         const seriesDefinition = type === 'line' ? LineSeries : CandlestickSeries;
-
+        
         // Main price series
         const mainSeries = chart.addSeries(seriesDefinition, {
             color: lineColor,
             topColor: areaTopColor,
-            bottomColor: areaBottomColor   
+            bottomColor: areaBottomColor,
+            title: symbol
         });
 
         const pane = chart.addPane(true);
