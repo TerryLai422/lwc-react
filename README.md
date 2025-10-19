@@ -5,7 +5,6 @@ This is a minimal React starter project that uses the [Parcel JS](https://www.pa
 ## Prerequisites
 
 - Install latest [Node.js LTS version](https://nodejs.org/en/download/)
-- Install latest version of [Yarn](https://classic.yarnpkg.com/en/)
 
 Do note if you use `npm`, a different lock file will be created. If you wish to use `npm` instead of Yarn, then delete `yarn.lock` file. Don't mix package managers.
 

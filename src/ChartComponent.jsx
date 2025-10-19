@@ -2,13 +2,11 @@ import { createChart, ColorType, LineSeries, CandlestickSeries, HistogramSeries 
 import React, { useEffect, useRef, useState } from 'react';
 import { fetchChartData } from './api/chartApi';
 import { calculateMovingAverageIndicatorValues } from './utils/moving-average-calculation';
-import { calculateCorrelationIndicatorValues } from './utils/correlation-calculation';
 import { privateDecrypt } from 'crypto';
 
 const ChartComponent = props => {
     const chartContainerRef = useRef(null);
     const [chartData, setChartData] = useState([]);
-    const [indexData, setIndexData] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -54,7 +52,9 @@ const ChartComponent = props => {
             const maData = calculateMovingAverageIndicatorValues(data, { length: ma.length });
             const maSeries = chart.addSeries(LineSeries, {
                 color: ma.color,
-                lineWidth: 1
+                lineWidth: 1,
+                lastValueVisible: false,
+                priceLineVisible: false
             });
             maSeries.setData(maData);
         }
@@ -75,7 +75,7 @@ const ChartComponent = props => {
     // Volume histogram + 20-day MA
     const addVolumeSeries = (chart, data) => {
         const volumePane = chart.addPane(true);
-        volumePane.setHeight(100); // 100 pixels height for volume pane
+        volumePane.setHeight(100); 
         // Separate price scale for volume
         const volumeSeries = volumePane.addSeries(HistogramSeries, {
             priceFormat: { type: 'volume' },
@@ -101,31 +101,13 @@ const ChartComponent = props => {
         const volMASeries = volumePane.addSeries(LineSeries, {
             color: 'rgba(120, 80, 239, 0.8)',
             lineWidth: 1.5,
-            priceScaleId: 'volume'
+            priceScaleId: 'volume',
+            lastValueVisible: false,
+            priceLineVisible: false
         });
         volMASeries.setData(volMAData);
     };
     
-    const addCorrelationSeries = (chart, primaryData, secondaryData) => {
-
-        const correlationPane = chart.addPane(false);
-        correlationPane.setHeight(100); // 100 pixels height for volume pane
-        const indicatorData = calculateCorrelationIndicatorValues(
-            primaryData,
-            secondaryData,
-            {
-                allowMismatchedDates: true,
-                length: 20,
-            }
-        );
-        const correlationSeries = correlationPane.addSeries(LineSeries, {
-            color: 'rgba(120, 80, 239, 0.8)',
-            lineWidth: 1.5,
-            priceScaleId: 'volume'
-        });
-        correlationSeries.setData(indicatorData);
-    };
-
     useEffect(() => {
         if (!chartContainerRef.current) return;
         if (!chartData || chartData.length === 0) return;
@@ -136,7 +118,17 @@ const ChartComponent = props => {
             width: chartContainerRef.current.clientWidth,
             height: 600
         });
-                
+
+        chart.applyOptions({
+            layout: {
+                panes: {
+                    separatorColor: '#0d00ff74',
+                    separatorHoverColor: '#00ff00',
+                    enableResize: false,
+                },
+            },
+        });
+
         const seriesDefinition = type === 'line' ? LineSeries : CandlestickSeries;
         
         // Main price series
@@ -144,10 +136,10 @@ const ChartComponent = props => {
             color: lineColor,
             topColor: areaTopColor,
             bottomColor: areaBottomColor,
-            title: symbol
+            title: symbol,
+            lastValueVisible: false,
+            priceLineVisible: false
         });
-
-
 
         try {
             mainSeries.setData(chartData);
