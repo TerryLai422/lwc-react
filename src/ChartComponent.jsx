@@ -121,14 +121,6 @@ const ChartComponent = props => {
             bottomColor: areaBottomColor        
         });
 
-        // Configure separate price scales
-        // chart.applyOptions({
-        //     priceScales: {
-        //         price: { scaleMargins: { top: 0, bottom: 0.2 } },      // leave 20% at bottom
-        //         volume: { scaleMargins: { top: 0.8, bottom: 0 } },     // bottom 20%
-        //     },
-        // });
-
         try {
             mainSeries.setData(chartData);
             addMovingAverages(chart, chartData);
