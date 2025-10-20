@@ -6,14 +6,23 @@ import { Tabs, Tab, Box } from '@mui/material';
 
 export function App() {
   const [activeTab, setActiveTab] = useState(0);
-  const [symbol, setSymbol] = useState('TSLA');
+  const [symbol, setSymbol] = useState('TSLA');          // Actual symbol used for fetching
+  const [inputSymbol, setInputSymbol] = useState('TSLA'); // Temporary input field value
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
 
-  const handleSymbolChange = (event) => {
-    setSymbol(event.target.value.toUpperCase());
+  // Update input as user types
+  const handleInputChange = (event) => {
+    setInputSymbol(event.target.value.toUpperCase());
+  };
+
+  // Only fetch when Enter is pressed
+  const handleKeyPress = (event) => {
+    if (event.key === 'Enter') {
+      setSymbol(inputSymbol.trim());
+    }
   };
 
   return (
@@ -33,14 +42,15 @@ export function App() {
             <Tab label="Stock Chart" />
           </Tabs>
 
-          {/* Symbol input — only visible on Stock Chart tab */}
+          {/* Symbol input — visible only in Stock Chart tab */}
           {activeTab === 1 && (
             <Box>
               <input
                 type="text"
-                value={symbol}
-                onChange={handleSymbolChange}
-                placeholder="Enter symbol"
+                value={inputSymbol}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyPress}
+                placeholder="Enter symbol and press Enter"
                 style={{
                   padding: '6px 10px',
                   fontSize: '14px',
