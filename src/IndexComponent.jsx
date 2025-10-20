@@ -4,7 +4,7 @@ import { fetchChartData } from './api/chartApi';
 import { calculateMovingAverageIndicatorValues } from './utils/moving-average-calculation';
 import { privateDecrypt } from 'crypto';
 
-const IndicatorComponent = props => {
+const IndexComponent = props => {
     const chartContainerRef = useRef(null);
     const [chartData, setChartData] = useState([]);
     const [w52Data, setW52Data] = useState([]);
@@ -42,7 +42,7 @@ const IndicatorComponent = props => {
         loadData();
     }, []);
 
-    // Moving averages for price
+    // 52 week high/low indicator
     const addw52Data = (chart, w52Data) => {
         const w52HPane = chart.addPane(true);
         w52HPane.setHeight(100); 
@@ -65,6 +65,26 @@ const IndicatorComponent = props => {
             value: d.low
         }));
         w52LSeries.setData(w52LData);        
+    };
+
+        // Moving averages for price
+    const addMovingAverages = (chart, data) => {
+        const movingAverages = [
+            { length: 20, color: 'orange' },
+            { length: 50, color: 'green' },
+            { length: 200, color: 'pink' }
+        ];
+
+        for (const ma of movingAverages) {
+            const maData = calculateMovingAverageIndicatorValues(data, { length: ma.length });
+            const maSeries = chart.addSeries(LineSeries, {
+                color: ma.color,
+                lineWidth: 1,
+                lastValueVisible: false,
+                priceLineVisible: false
+            });
+            maSeries.setData(maData);
+        }
     };
 
     // 20-day moving average for volume
@@ -148,6 +168,7 @@ const IndicatorComponent = props => {
 
         try {
             mainSeries.setData(chartData);
+            addMovingAverages(chart, chartData);
             addVolumeSeries(chart, chartData);
             addw52Data(chart, w52Data);
 
@@ -175,4 +196,4 @@ const IndicatorComponent = props => {
     );
 };
 
-export { IndicatorComponent };
+export { IndexComponent };

@@ -1,46 +1,61 @@
-// App.js
 import React, { useState } from 'react';
 import { ChartComponent } from './ChartComponent';
+import { IndexComponent } from './IndexComponent';
+import { ErrorBoundary } from './ErrorBoundary';
+import { Tabs, Tab, Box } from '@mui/material';
 
-export const App = () => {
+export function App() {
+  const [activeTab, setActiveTab] = useState(0);
   const [symbol, setSymbol] = useState('TSLA');
-  const [inputSymbol, setInputSymbol] = useState(symbol);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setSymbol(inputSymbol.toUpperCase());
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
+  };
+
+  const handleSymbolChange = (event) => {
+    setSymbol(event.target.value.toUpperCase());
   };
 
   return (
-    <div style={{ textAlign: 'center', padding: '20px' }}>
-      <h2>Stock Chart Viewer</h2>
-
-      <form onSubmit={handleSubmit} style={{ marginBottom: '20px' }}>
-        <input
-          type="text"
-          placeholder="Enter symbol (e.g. AAPL)"
-          value={inputSymbol}
-          onChange={(e) => setInputSymbol(e.target.value)}
-          style={{
-            padding: '8px',
-            fontSize: '16px',
-            width: '200px',
-            marginRight: '10px',
-          }}
-        />
-        <button
-          type="submit"
-          style={{
-            padding: '8px 16px',
-            fontSize: '16px',
-            cursor: 'pointer',
+    <ErrorBoundary>
+      <Box sx={{ width: '100%', typography: 'body1' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            mb: 2,
           }}
         >
-          Load
-        </button>
-      </form>
+          {/* Tabs */}
+          <Tabs value={activeTab} onChange={handleTabChange}>
+            <Tab label="SP500" />
+            <Tab label="Stock Chart" />
+          </Tabs>
 
-      <ChartComponent type="candlestick" symbol={symbol} />
-    </div>
+          {/* Symbol input — only visible on Stock Chart tab */}
+          {activeTab === 1 && (
+            <Box>
+              <input
+                type="text"
+                value={symbol}
+                onChange={handleSymbolChange}
+                placeholder="Enter symbol"
+                style={{
+                  padding: '6px 10px',
+                  fontSize: '14px',
+                  borderRadius: '4px',
+                  border: '1px solid #ccc',
+                }}
+              />
+            </Box>
+          )}
+        </Box>
+
+        {/* Tab content */}
+        {activeTab === 0 && <IndexComponent />}
+        {activeTab === 1 && <ChartComponent type="candlestick" symbol={symbol} />}
+      </Box>
+    </ErrorBoundary>
   );
-};
+}
