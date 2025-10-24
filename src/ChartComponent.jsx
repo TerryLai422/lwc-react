@@ -26,9 +26,7 @@ const ChartComponent = props => {
     useEffect(() => {
         const loadData = async () => {
             try {
-                setIsLoading(true);
-                // const indexData = await fetchChartData('index', 'full', 'SPX');
-                // setIndexData(indexData);                       
+                setIsLoading(true);                  
                 const chartData = await fetchChartData('stock', type == 'candlestick'? 'full': 'single', symbol);
                 setChartData(chartData);         
             } catch (err) {

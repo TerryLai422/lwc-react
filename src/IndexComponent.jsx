@@ -12,6 +12,7 @@ const IndexComponent = props => {
     const [error, setError] = useState(null);
 
     const {
+        index = 'SPX',
         colors: {
             backgroundColor = 'white',
             lineColor = 'blue',
@@ -27,7 +28,7 @@ const IndexComponent = props => {
             try {
                 setIsLoading(true);                      
                 const [chartData, ma50To200HData] = await Promise.all([
-                    fetchChartData('index', 'full', 'SPX'),
+                    fetchChartData('index', 'full', index),
                     fetchChartData('market', 'single', 'MA_50_200'),
                 ]);
                 setChartData(chartData);
@@ -39,7 +40,7 @@ const IndexComponent = props => {
             }
         };
         loadData();
-    }, []);
+    }, [index]);
 
     // 52 week high/low indicator
     const addMA50To200Data = (chart, ma50To200HData) => {
@@ -147,7 +148,7 @@ const IndexComponent = props => {
             color: lineColor,
             topColor: areaTopColor,
             bottomColor: areaBottomColor,
-            title: 'SPX',
+            title: index,
             lastValueVisible: false,
             priceLineVisible: false
         });

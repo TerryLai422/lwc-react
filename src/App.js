@@ -2,32 +2,43 @@ import React, { useState } from 'react';
 import { ChartComponent } from './ChartComponent';
 import { IndexComponent } from './IndexComponent';
 import { ErrorBoundary } from './ErrorBoundary';
-import { Tabs, Tab, Box } from '@mui/material';
+import { Tabs, Tab, Box, ToggleButton, ToggleButtonGroup } from '@mui/material';
 
 export function App() {
   const [activeTab, setActiveTab] = useState(0);
-  const [symbol, setSymbol] = useState('TSLA');          // Actual symbol used for fetching
-  const [inputSymbol, setInputSymbol] = useState('TSLA'); // Temporary input field value
+
+  // For Stock Chart tab
+  const [symbol, setSymbol] = useState('TSLA');
+  const [inputSymbol, setInputSymbol] = useState('TSLA');
+
+  // For Index tab
+  const [indexSymbol, setIndexSymbol] = useState('SPX');
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
 
-  // Update input as user types
+  // Handle typing in stock symbol
   const handleInputChange = (event) => {
     setInputSymbol(event.target.value.toUpperCase());
   };
 
-  // Only fetch when Enter is pressed
+  // Only update symbol when Enter is pressed
   const handleKeyPress = (event) => {
     if (event.key === 'Enter') {
       setSymbol(inputSymbol.trim());
     }
   };
 
+  // Handle index change
+  const handleIndexChange = (event, newIndex) => {
+    if (newIndex !== null) setIndexSymbol(newIndex);
+  };
+
   return (
     <ErrorBoundary>
       <Box sx={{ width: '100%', typography: 'body1' }}>
+        {/* Header section with Tabs and optional input */}
         <Box
           sx={{
             display: 'flex',
@@ -36,13 +47,12 @@ export function App() {
             mb: 2,
           }}
         >
-          {/* Tabs */}
           <Tabs value={activeTab} onChange={handleTabChange}>
-            <Tab label="SP500" />
+            <Tab label="Indices" />
             <Tab label="Stock Chart" />
           </Tabs>
 
-          {/* Symbol input — visible only in Stock Chart tab */}
+          {/* Symbol input — only visible on Stock Chart tab */}
           {activeTab === 1 && (
             <Box>
               <input
@@ -62,9 +72,33 @@ export function App() {
           )}
         </Box>
 
-        {/* Tab content */}
-        {activeTab === 0 && <IndexComponent />}
-        {activeTab === 1 && <ChartComponent type="candlestick" symbol={symbol} />}
+        {/* Tab 1: Indices */}
+        {activeTab === 0 && (
+          <Box>
+            {/* Index selection buttons */}
+            <Box sx={{ mb: 2, textAlign: 'center' }}>
+              <ToggleButtonGroup
+                color="primary"
+                value={indexSymbol}
+                exclusive
+                onChange={handleIndexChange}
+                size="small"
+              >
+                <ToggleButton value='SPX' >S&P 500</ToggleButton>
+                <ToggleButton value='NDX' >Nasdaq 100</ToggleButton>
+                <ToggleButton value='DJI' >Dow Jones</ToggleButton>
+              </ToggleButtonGroup>
+            </Box>
+
+            {/* Display the selected index */}
+            <IndexComponent index={indexSymbol} />
+          </Box>
+        )}
+
+        {/* Tab 2: Stock Chart */}
+        {activeTab === 1 && (
+          <ChartComponent type="candlestick" symbol={symbol} />
+        )}
       </Box>
     </ErrorBoundary>
   );
