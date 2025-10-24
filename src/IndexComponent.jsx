@@ -7,8 +7,7 @@ import { privateDecrypt } from 'crypto';
 const IndexComponent = props => {
     const chartContainerRef = useRef(null);
     const [chartData, setChartData] = useState([]);
-    const [w52HData, setW52HData] = useState([]);
-    const [w52LData, setW52LData] = useState([]);
+    const [ma50To200HData, setMA50To200Data] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -27,15 +26,12 @@ const IndexComponent = props => {
         const loadData = async () => {
             try {
                 setIsLoading(true);                      
-                const [chartData, w52HData, w52LData] = await Promise.all([
+                const [chartData, ma50To200HData] = await Promise.all([
                     fetchChartData('index', 'full', 'SPX'),
-                    fetchChartData('market', 'single', 'high52w'),
-                    fetchChartData('market', 'single', 'low52w')
+                    fetchChartData('market', 'single', 'MA_50_200'),
                 ]);
                 setChartData(chartData);
-                setW52HData(w52HData);
-                setW52LData(w52LData);
-                
+                setMA50To200Data(ma50To200HData);                
             } catch (err) {
                 setError(err.message);
             } finally {
@@ -46,24 +42,15 @@ const IndexComponent = props => {
     }, []);
 
     // 52 week high/low indicator
-    const addw52Data = (chart, w52HData, w52LData) => {
-        const w52HPane = chart.addPane(true);
-        w52HPane.setHeight(100); 
-        const w52HSeries = w52HPane.addSeries(LineSeries, {
+    const addMA50To200Data = (chart, ma50To200HData) => {
+        const ma50To200Pane = chart.addPane(true);
+        ma50To200Pane.setHeight(100); 
+        const ma50To200Series = ma50To200Pane.addSeries(LineSeries, {
             color: 'red',
             priceFormat: { type: 'percent' },
             priceScaleId: 'percent'
         });
-        w52HSeries.setData(w52HData);        
-
-        const w52LPane = chart.addPane(true);
-        w52LPane.setHeight(100)
-        const w52LSeries = w52LPane.addSeries(LineSeries, {
-            color: 'blue',
-            priceFormat: { type: 'precent' },
-            priceScaleId: 'precent'
-        });
-        w52LSeries.setData(w52LData);        
+        ma50To200Series.setData(ma50To200HData);          
     };
 
         // Moving averages for price
@@ -169,7 +156,7 @@ const IndexComponent = props => {
             mainSeries.setData(chartData);
             addMovingAverages(chart, chartData);
             addVolumeSeries(chart, chartData);
-            addw52Data(chart, w52HData, w52LData);
+            addMA50To200Data(chart, ma50To200HData);
 
             chart.timeScale().fitContent();
         } catch (err) {
